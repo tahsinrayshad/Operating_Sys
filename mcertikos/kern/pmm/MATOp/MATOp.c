@@ -7,6 +7,8 @@
 #define VM_USERLO_PI (VM_USERLO / PAGESIZE)
 #define VM_USERHI_PI (VM_USERHI / PAGESIZE)
 
+unsigned int pointer = VM_USERLO_PI;
+
 /**
  * Allocate a physical page.
  *
@@ -24,6 +26,24 @@
 unsigned int palloc()
 {
     // TODO
+    if(get_nps()==0){
+        return 0;
+    }
+
+    unsigned int i = pointer;
+
+    do{
+        if(at_is_norm(i) && at_is_allocated(i)==0){
+            at_set_allocated(i,1);
+            return i;
+        }
+
+        i++;
+
+        if(i==VM_USERHI_PI){
+            i = VM_USERLO_PI;
+        }
+    }while(i != pointer);
     return 0;
 }
 
@@ -38,4 +58,5 @@ unsigned int palloc()
 void pfree(unsigned int pfree_index)
 {
     // TODO
+    at_set_allocated(pfree_index, 0);
 }

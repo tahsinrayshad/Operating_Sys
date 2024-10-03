@@ -22,6 +22,13 @@ void pmem_init(unsigned int mbi_addr)
     unsigned int nps;
 
     // TODO: Define your local variables here.
+    unsigned int tableNRow;
+    unsigned int startAddr;
+    unsigned int length;
+    unsigned int highestAddr;
+    unsigned int pageIndex;
+    unsigned int permission;
+    unsigned int i;
 
     // Calls the lower layer initialization primitive.
     // The parameter mbi_addr should not be used in the further code.
@@ -34,6 +41,17 @@ void pmem_init(unsigned int mbi_addr)
      *       divided by the page size.
      */
     // TODO
+    tableNRow = get_size();
+    if(tableNRow == 0){
+        nps = 0;
+    }
+    else{
+        startAddr = get_mms(tableNRow - 1);
+        length = get_mml(tableNRow-1);
+        highestAddr = startAddr + length - 1;
+
+        nps = (highestAddr + 1)/PAGESIZE;
+    }
 
     set_nps(nps);  // Setting the value computed above to NUM_PAGES.
 
@@ -61,4 +79,45 @@ void pmem_init(unsigned int mbi_addr)
      *    so in that case, you should consider those pages as unavailable.
      */
     // TODO
+    for(i=0; i<VM_USERLO_PI; i++){
+        at_set_perm(i,1);
+    }
+    for(i=0; i<VM_USERHI_PI; i++){
+        at_set_perm(i,1);
+    }
+    for(i=VM_USERLO_PI; i<VM_USERHI_PI; i++){
+        at_set_perm(i,0);
+    }
+    for(i=0; i<tableNRow; i++){
+        startAddr = get_mms(i);
+        length = get_mml(i);
+        permission = is_usable(i);
+
+        if(permission = 1){
+            permission = 2;
+        }
+        else{
+            permission = 0;
+        }
+
+        pageIndex = startAddr / PAGESIZE;
+
+        if(pageIndex*PAGESIZE < startAddr){
+            pageIndex++;
+        }
+
+        while((pageIndex + 1) * PAGESIZE <= startAddr + length){
+            if(pageIndex < VM_USERLO_PI){
+                pageIndex++;
+                continue;
+            }
+
+            if(pageIndex >= VM_USERHI_PI){
+                break;
+            }
+
+            at_set_perm(pageIndex, permission);
+            pageIndex++;
+        }
+    }
 }
